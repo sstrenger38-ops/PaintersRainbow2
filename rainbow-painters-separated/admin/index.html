@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin Dashboard (Demo) | Rainbow Painters</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="container nav-wrap">
+  <a class="logo" href="../index.html"><span class="em">🌈</span><span>RAINBOW PAINTERS<small>ADMIN DEMO</small></span></a>
+  <a class="btn btn-sm btn-outline" href="../index.html">← Back to website</a></div></header>
+<main>
+<section style="padding:48px 0">
+ <div class="container">
+  <span class="eyebrow">Future-ready architecture</span>
+  <h1 style="font-size:2rem">Leads Dashboard (Demo)</h1>
+  <p class="lead" style="max-width:70ch">This demo shows the enquiries submitted <b>in this browser</b> and the dashboard statistics the future admin panel will provide. When the PostgreSQL + Next.js API described in <code>docs/ARCHITECTURE.md</code> is connected, this view will read from the database and be protected by admin login.</p>
+  <div class="stat-grid" id="stats" style="margin-top:26px"></div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Date</th><th>Type</th><th>Name</th><th>Phone</th><th>Service</th><th>Location</th><th>Status</th><th>Value (₹)</th></tr></thead>
+    <tbody id="rows"><tr><td colspan="8" style="text-align:center;color:var(--muted);padding:30px">No enquiries in this browser yet. Submit a form on the website to see it here.</td></tr></tbody>
+  </table></div>
+  <p class="note" style="text-align:left">Demo only: data is stored in this browser's local storage and is not shared across devices. Do not treat this page as secure storage.</p>
+ </div>
+</section>
+</main>
+<script>
+(function(){
+  var STATUS=["new","inspection booked","quote sent","active","completed","lost"];
+  function load(){try{return JSON.parse(localStorage.getItem("rp_leads")||"[]")}catch(e){return[]}}
+  function save(a){try{localStorage.setItem("rp_leads",JSON.stringify(a))}catch(e){}}
+  function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+  function render(){
+    var a=load(), n=function(f){return a.filter(f).length};
+    var rev=a.filter(function(l){return l.status==="completed"||l.status==="active"}).reduce(function(s,l){return s+(+l.amount||0)},0);
+    var stats=[["Total Leads",a.length],["Site Inspections",n(function(l){return l.type==="inspection"||l.status==="inspection booked"})],
+      ["Quotes Sent",n(function(l){return l.status==="quote sent"})],["Active Projects",n(function(l){return l.status==="active"})],
+      ["Completed Projects",n(function(l){return l.status==="completed"})],["Estimated Revenue","₹"+rev.toLocaleString("en-IN")]];
+    document.getElementById("stats").innerHTML=stats.map(function(s){return '<div class="stat"><small>'+s[0]+'</small><b>'+s[1]+'</b></div>'}).join("");
+    if(!a.length)return;
+    document.getElementById("rows").innerHTML=a.map(function(l,i){var d=l.data||{};
+      return '<tr><td>'+esc(new Date(l.date).toLocaleDateString("en-IN"))+'</td><td>'+esc(l.type)+'</td><td>'+esc(d.name)+'</td><td>'+esc(d.phone)+'</td><td>'+esc(d.service||"—")+'</td><td>'+esc(d.location||"—")+'</td>'+
+      '<td><select data-i="'+i+'" data-k="status">'+STATUS.map(function(s){return '<option'+(s===l.status?' selected':'')+'>'+s+'</option>'}).join("")+'</select></td>'+
+      '<td><input type="number" min="0" data-i="'+i+'" data-k="amount" value="'+(+l.amount||0)+'"></td></tr>'}).join("");
+  }
+  document.addEventListener("change",function(e){var t=e.target,i=t.getAttribute&&t.getAttribute("data-i");if(i===null||i===undefined)return;
+    var a=load();if(!a[i])return;a[i][t.getAttribute("data-k")]=t.value;save(a);render();});
+  render();
+})();
+</script>
+</body>
+</html>
